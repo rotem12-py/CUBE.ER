@@ -1,0 +1,40 @@
+.time-input{
+    border-radius: 12px;
+    border-color: black;
+    width: 1300px;
+    border-width: 3.2px;
+    margin-top: 140px;
+    height: 58px;
+    text-align: center;
+}
+
+
+.form-label{
+    color: white;
+}
+
+
+.text-center{
+    color: white;
+}
+
+
+.edit-solve-text{
+    color: white;
+    text-align: center;
+}
+
+#solve-msg {
+    display: block; /* Make sure the h1 is treated as a block element */
+    position: fixed; /* Use fixed positioning to center it relative to the viewport */
+    top: 50%; /* Move it 50% down from the top */
+    left: 50%; /* Move it 50% from the left */
+    transform: translate(-50%, -60%); /* Adjust position to center it */
+    color: white; /* Keep the color as specified */
+    font-size: 310px; /* Maintain your font size */
+    text-align: center; /* Center text inside the h1 */
+}
+
+.text-black {
+    color: #212529;
+}

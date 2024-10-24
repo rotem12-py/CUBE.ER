@@ -1,0 +1,15 @@
+{% extends 'header.html' %}
+
+{% block content %}
+    <h1 class="edit-solve-text">Solve Number {{ solve.solve_num }}</h1>
+    <h1 class="edit-solve-text">{{ solve.date }}</h1>
+    <h1 class="edit-solve-text">{{ solve.scramble }}</h1>
+    
+    <div class="d-flex justify-content-center align-items-center" style="height: 100%; margin-top: 90px;">
+        <a href="{{ red_url }}" class="btn btn-success btn-lg" style="font-size: 24px; padding: 20px 40px; text-decoration: none; color: white; margin-right: 20px; width: 160px; height: 85px;">Ok</a>
+        <a href="{{ url_for('delete_solve', solve_id=solve.id) }}" class="btn btn-danger btn-lg" style="font-size: 24px; padding: 20px 40px; text-decoration: none; color: white; width: 160px; margin-right: 20px; height: 85px;">Delete</a>
+        <a href="{{ url_for('penalty', solve_id=solve.id, penalty='+2') }}" class="btn btn-warning btn-lg" style="font-size: 24px; padding: 20px 40px; text-decoration: none; color: white; width: 160px; margin-right: 20px; height: 85px;">+2</a>
+        <a href="{{ url_for('penalty', solve_id=solve.id, penalty='DNF') }}" class="btn btn-secondary btn-lg" style="font-size: 24px; padding: 20px 40px; text-decoration: none; color: white; width: 160px; margin-right: 20px; height: 85px;">DNF</a>
+        <a href="{{ url_for('reset_penalties', solve_id=solve.id) }}" class="btn btn-primary btn-lg" style="font-size: 24px; text-decoration: none; color: white; width: 160px; margin-right: 20px; height: 85px;">Reset All Changes</a>
+    </div>
+{% endblock %}

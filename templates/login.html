@@ -1,0 +1,16 @@
+{% from 'bootstrap5/form.html' import render_form %}
+{% extends "header.html" %}
+{% block content %}
+<div class="container h-100">  <!-- Full height container -->
+    <div class="row justify-content-center align-items-center h-100">  <!-- Center vertically and horizontally -->
+        <div class="col-md-4">  <!-- Adjust the width as needed -->
+            <h2 class="text-center">Log In</h2>  <!-- Optional: Add a heading for clarity -->
+            <div class="text-center">  <!-- Centering for the rendered form -->
+                {{ render_form(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,115 @@
+{% extends "header.html" %}
+{% from 'bootstrap5/form.html' import render_form %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg bg-primary w-100 justify-content-center scramble-span" id="scramble-span" style="width: 100%; color: #212529;">
+  <span class="fw-bold fs-3 text-center text-black" style="display: inline-block; width: 100%; color: #212529;">{{ scramble }}</span>
+  
+</nav>
+<a href="{{ url_for('home') }}" id="input_link">Input Mode</a>
+
+<div class="d-flex align-items-start mt-0"> <!-- No top margin -->
+  <div id="solves-card" class="card" style="width: 300px; height: 839px; margin-left: 0;"> <!-- Fixed size card -->
+    <div class="card-body d-flex flex-column">
+      <h5 class="card-title">Your Solves:</h5>
+      {% if not min_time == None %}
+      <h5>Best Single: {{ min_time }}</h5>
+      {% endif %}
+      {% if not ao5 == None %}
+      <h5>AO5: {{ ao5 }}</h5>
+      {% endif %}
+      
+      <!-- Scrollable solve list inside the fixed-size card -->
+      <div style="overflow-y: auto; flex-grow: 1; max-height: 745px;"> <!-- Adjust max-height for the scroll area -->
+        {% for solve in solves %}
+        {% if solve.status == "DNF" %}
+        <h5>{{ solve.solve_num }}. DNF({{ solve.formatted_time }}) <a href="{{ url_for('edit_solve', solve_id=solve.id) }}" class="btn btn-secondary btn-lg" style="font-size: 21px;text-decoration: none; color: white; width: 100px; height: 50px; margin-left: 20px; padding-bottom: 25px;">Edit</a></h5>
+        {% elif solve.status == "+2" %}
+        <h5>{{ solve.solve_num }}. {{ solve.formatted_time }}(+2) <a href="{{ url_for('edit_solve', solve_id=solve.id) }}" class="btn btn-secondary btn-lg" style="font-size: 21px;text-decoration: none; color: white; width: 100px; height: 50px; margin-left: 20px; padding-bottom: 25px;">Edit</a></h5>
+        {% else %}
+        <h5>{{ solve.solve_num }}. {{ solve.formatted_time }} <a href="{{ url_for('edit_solve', solve_id=solve.id) }}" class="btn btn-secondary btn-lg" style="font-size: 21px;text-decoration: none; color: white; width: 100px; height: 50px; margin-left: 20px; padding-bottom: 25px;">Edit</a></h5>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+<div class="container d-flex align-items-center justify-content-center" style="height: 70vh; margin-left: 80px;"> 
+    <div class="row justify-content-center text-center"> 
+        <div class="col-12"> 
+            {% if solves|length > 0 %}
+            <h1 id="time-text" style="font-size: 310px;">{{ latest_solve_time  }}</h1>
+            {% else %}
+            <h1 id="time-text" style="font-size: 310px;">00.00</h1>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<h1 style="display: none; font-size: 310px; color: white;" id="solve-msg">SOLVE!</h1>
+<script>
+  let isHidden = false; // Track visibility state
+  let startTime; // Variable to store the start time
+  let timerInterval; // To manage the timer interval
+
+  // Function to send the time as JSON to your website
+  function sendTime(elapsedTime) {
+    const data = { time: elapsedTime.toFixed(2) }; // Time with 2 decimal places
+
+    fetch('/timer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ time: elapsedTime.toFixed(2) }),
+    })
+    location.reload()
+  }
+
+  document.addEventListener('keydown', function(event) {
+    // Check if the pressed key is the spacebar
+    if (event.code === 'Space') {
+      event.preventDefault(); // Prevent default spacebar behavior (scrolling)
+
+      if (!isHidden) {
+        // Hide elements
+        document.getElementById("scramble-span").style.display = 'none';
+        document.getElementById("head-navbar").style.display = 'none';
+        document.getElementById("solves-card").style.display = 'none';
+        document.getElementById("time-text").style.display = 'none';
+        document.getElementById('input_link').style.display = 'none';
+        document.getElementById("solve-msg").style.display = 'block';
+
+        // Start the timer
+        startTime = new Date().getTime(); // Get current time in milliseconds
+        timerInterval = setInterval(function() {
+          const currentTime = new Date().getTime();
+          const elapsedTime = (currentTime - startTime) / 1000; // Time in seconds
+          console.log(elapsedTime.toFixed(2)); // Log time for testing purposes
+        }, 100); // Update every 100 milliseconds (0.1 seconds)
+        
+      } else {
+        // Show elements
+        document.getElementById("scramble-span").style.display = 'block';
+        document.getElementById("head-navbar").style.display = 'block';
+        document.getElementById("solves-card").style.display = 'block';
+        document.getElementById("time-text").style.display = 'block';
+        document.getElementById('input_link').style.display = 'block';
+        document.getElementById("solve-msg").style.display = 'none';
+
+        // Stop the timer
+        clearInterval(timerInterval);
+        const endTime = new Date().getTime();
+        const elapsedTime = (endTime - startTime) / 1000; // Time in seconds
+        
+        // Send the time as JSON to the URL
+        sendTime(elapsedTime);
+      }
+
+      // Toggle the state
+      isHidden = !isHidden;
+    }
+  });
+</script>
+{% endblock %}
