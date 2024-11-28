@@ -1,0 +1,6 @@
+#scramble-text {
+    font-size: 30px; /* Makes the text bigger */
+    font-weight: bold; /* Makes the text bold */
+    text-align: center; /* Ensures the text is centered if needed */
+    color: white; /* Adjust text color if necessary */
+}

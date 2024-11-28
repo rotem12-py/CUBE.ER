@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>CUBE.ER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="static/custom.css" rel="stylesheet">
+</head>
+<body class="bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="header-navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand" >CUBE.ER</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+          {% if mode == "input" %}
+        <li class="nav-item">
+          <a class="nav-link" href="/?mode=timer">Timer</a>
+        </li>
+          {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="/?mode=input">Input</a>
+            </li>
+          {% endif %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div id="scramble-div">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary" style="height: 70px;">
+    <div class="container-fluid d-flex justify-content-center align-items-center">
+        <span id="scramble-text">{{ scramble }}</span>
+    </div>
+  </nav>
+</div>
+
+{% if mode == "input" %}
+<div style="position: absolute; top: 40%; left: 27%;">
+    <form action="{{ url_for('home') }}" method="post" id="solve-form">
+        <div class="mb-3">
+            <input class="form-control" style="width: 800px; height: 110px;" name="time">
+        </div>
+        <input type="hidden" name="scramble" value="{{ scramble }}" id="hidden-scramble">
+    </form>
+</div>
+{% else %}
+<div style="position: absolute; top: 30%; left: 33%;" id="timer-div">
+    {% if all_solves %}
+        <h1 style="font-size: 300px; color: white;">{{ all_solves[0].time }}</h1>
+    {% else %}
+        <h1 style="font-size: 300px; color: white;">00.00</h1>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card" style="width: 18rem; height: 698px;" id="solves-card">
+  <div class="card-body">
+    <h5 class="card-title">Your Solves:</h5>
+      {% for solve in all_solves %}
+      <p>{{ solve.solve_num }}. {{ solve.time }}</p>
+      {% endfor %}
+  </div>
+</div>
+
+
+{% if mode == 'timer' %}
+<script>
+    let timerStarted = false;
+    let startTime;
+    let interval;
+    let timeElapsed = 0;
+
+    const elementsToHide = [
+        document.getElementById('header-navbar'),
+        document.getElementById('scramble-div'),
+        document.getElementById('solves-card'),
+        document.getElementById('timer-div')
+    ];
+
+    const scrambleText = document.getElementById('scramble-text').innerText;
+
+    function hideElements() {
+        elementsToHide.forEach(element => {
+            element.style.display = 'none';
+        });
+    }
+
+    function showElements() {
+        elementsToHide.forEach(element => {
+            element.style.display = '';
+        });
+    }
+
+    function startTimer() {
+        startTime = Date.now() - timeElapsed;
+        interval = setInterval(function() {
+            timeElapsed = Date.now() - startTime;
+        }, 10);
+    }
+
+    function stopTimer() {
+        clearInterval(interval);
+    }
+
+    function postTime() {
+    const timeInSeconds = (timeElapsed / 1000).toFixed(2);
+    const scrambleText = document.getElementById('scramble-text').innerText;
+
+    // Create a data object to send as JSON
+    const data = {
+        time: timeInSeconds,
+        scramble: scrambleText
+    };
+
+    fetch('{{ request.referrer }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+
+    })
+    window.location.reload();
+
+}
+
+    window.addEventListener('keydown', function(event) {
+        if (event.code === 'Space') {
+            event.preventDefault();
+
+            if (!timerStarted) {
+                // Start timer and hide elements
+                timerStarted = true;
+                hideElements();
+                startTimer();
+            } else {
+                // Stop timer, show elements and post time
+                stopTimer();
+                showElements();
+                postTime();
+            }
+        }
+    });
+</script>
+{% endif %}
+
+
+</body>
+</html>
