@@ -3,8 +3,9 @@ from scramble import scramble
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String
+from sqlalchemy import Integer, String, Float
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
+from datetime import date
 
 
 # create the app and init necessary things for the app
@@ -36,9 +37,12 @@ class User(db.Model, UserMixin):
 class NewSolve(db.Model):
     __tablename__ = "solves"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    time: Mapped[str] = mapped_column(String, nullable=False)
+    time: Mapped[float] = mapped_column(Float, nullable=False)
     solve_num: Mapped[int] = mapped_column(Integer, nullable=False)
     scramble: Mapped[str] = mapped_column(String, nullable=False)
+    date: Mapped[str] = mapped_column(String, nullable=False)
+    p2_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="OK")
 
     owner_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
     owner = relationship("User", back_populates="solves")
@@ -70,7 +74,8 @@ def home():
                 time = float(data["time"]),
                 owner = current_user,
                 solve_num = len(current_user.solves) + 1,
-                scramble = data["scramble"]
+                scramble = data["scramble"],
+                date = str(date.today())
             )
 
         else:
@@ -78,7 +83,8 @@ def home():
                 time=float(request.form["time"]) ,
                 owner=current_user,
                 solve_num=len(current_user.solves) + 1,
-                scramble=request.form["scramble"]
+                scramble=request.form["scramble"],
+                date=str(date.today())
             )
         # add solves to db and commit
         db.session.add(new_solve)
@@ -149,6 +155,73 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+
+# render the edit-solve page
+@app.route("/edit_solve")
+def edit_solve():
+    req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
+
+    return render_template("edit-solve.html", req_solve=req_solve)
+
+
+# reset all the solves penalties
+@app.route("/reset_solve")
+def reset_solve():
+    # get the requested solve by the solve_id parameter
+    req_solve = db.session.get(NewSolve, request.args.get("solve_id"))
+
+    # if the solve status is "+2", remove 2 seconds from it for every p2_count and round at the end
+    if req_solve.status == "+2":
+        for i in range(req_solve.p2_count):
+            req_solve.time -= 2
+
+        req_solve.p2_count = 0
+        req_solve.time = round(req_solve.time, 2)
+
+    # at the end, if was a "+2" or not, change the solves status to ok and commit
+    req_solve.status = "OK"
+    db.session.commit()
+
+    return redirect("/")
+
+
+# add penalties to solves
+@app.route("/penalty")
+def penalty():
+    # get the requested solve by the solve_id parameter
+    req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
+    # get the penalty to add by the penalty_type parameter
+    penalty_type = request.args.get("penalty_type")
+
+    # if the penalty_type is "+2" add 2 seconds to the solve and 1 to the p2_count and change the status to "+2"
+    if penalty_type == "+2":
+        req_solve.time += 2
+        req_solve.status = "+2"
+        req_solve.p2_count += 1
+        db.session.commit()
+        return redirect('/')
+    # if the penalty_type is dnf check if teh solves status is "+2" and if it is reset it. change the solves status to dnf and commit
+    if penalty_type == "DNF":
+        if req_solve.status == "+2":
+            for i in range(req_solve.p2_count):
+                req_solve.time -= 2
+
+            req_solve.p2_count = 0
+            req_solve.time = round(req_solve.time, 2)
+        req_solve.status = "DNF"
+        db.session.commit()
+        return redirect("/")
+
+
+# get solve using the solve_id parameter and delete it
+@app.route("/delete_solve")
+def delete_solve():
+    req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
+
+    db.session.delete(req_solve)
+    db.session.commit()
+    return redirect("/")
 
 
 if __name__ == "__main__":

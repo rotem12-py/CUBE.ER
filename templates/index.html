@@ -42,7 +42,7 @@
 <div style="position: absolute; top: 40%; left: 27%;">
     <form action="{{ url_for('home') }}" method="post" id="solve-form">
         <div class="mb-3">
-            <input class="form-control" style="width: 800px; height: 110px;" name="time">
+            <input class="form-control" style="width: 800px; height: 110px; text-align: center; font-size: 24px;" name="time">
         </div>
         <input type="hidden" name="scramble" value="{{ scramble }}" id="hidden-scramble">
     </form>
@@ -61,7 +61,13 @@
   <div class="card-body">
     <h5 class="card-title">Your Solves:</h5>
       {% for solve in all_solves %}
-      <p>{{ solve.solve_num }}. {{ solve.time }}</p>
+      {% if solve.status == "+2" %}
+      <h5>{{ solve.solve_num }}. (+{{solve.p2_count * 2}}){{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
+      {% elif solve.status == "DNF" %}
+      <h5>{{ solve.solve_num }}. DNF({{ solve.time }})<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
+      {% else %}
+      <h5>{{ solve.solve_num }}. {{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
+      {% endif %}
       {% endfor %}
   </div>
 </div>
