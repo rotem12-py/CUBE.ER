@@ -6,6 +6,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Integer, String, Float
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from datetime import date
+from functools import wraps
 
 
 # create the app and init necessary things for the app
@@ -71,14 +72,58 @@ def load_user(user_id):
     return db.get_or_404(User, user_id)
 
 
+def session_owner_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Get the session_id from the request args
+        session_id = request.args.get("session_id")
+        if session_id:
+            # Retrieve the session from the database
+            session = db.get_or_404(Session, session_id)
+
+            # Check if the current user is the owner of the session
+            if session.owner_id != current_user.id:
+                return redirect(url_for("home"))  # Redirect to home or an error page
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def solve_owner_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Get the session_id from the request args
+        solve_id = request.args.get("solve_id")
+        if solve_id:
+            # Retrieve the session from the database
+            solve = db.get_or_404(NewSolve, solve_id)
+
+            # Check if the current user is the owner of the session
+            if solve.owner_id != current_user.id:
+                return redirect(url_for("home"))  # Redirect to home or an error page
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # if user is not logged in redirect them to register page and tell them they need to be logged in
+        if not current_user.is_authenticated:
+            flash("To use The Website You Need To register Or Log In.")
+            return redirect(url_for("register"))
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 # home route
 @app.route("/", methods=["POST", "GET"])
+@session_owner_required
+@login_required
 def home():
-    # if user is not logged in redirect them to register page and tell them they need to be logged in
-    if not current_user.is_authenticated:
-        flash("To use The Website You Need To register Or Log In.")
-        return redirect(url_for("register"))
-
     # get the current session using the session_id parameter from the url
     session_id = request.args.get("session_id", current_user.sessions[0].id)
     current_session = db.get_or_404(Session, session_id)
@@ -191,6 +236,8 @@ def logout():
 
 # render the edit-solve page
 @app.route("/edit_solve")
+@login_required
+@solve_owner_required
 def edit_solve():
     req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
 
@@ -199,6 +246,8 @@ def edit_solve():
 
 # reset all the solves penalties
 @app.route("/reset_solve")
+@login_required
+@solve_owner_required
 def reset_solve():
     # get the requested solve by the solve_id parameter
     req_solve = db.session.get(NewSolve, request.args.get("solve_id"))
@@ -220,6 +269,8 @@ def reset_solve():
 
 # add penalties to solves
 @app.route("/penalty")
+@login_required
+@solve_owner_required
 def penalty():
     # get the requested solve by the solve_id parameter
     req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
@@ -248,6 +299,8 @@ def penalty():
 
 # get solve using the solve_id parameter and delete it
 @app.route("/delete_solve")
+@login_required
+@solve_owner_required
 def delete_solve():
     req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
 
@@ -257,6 +310,7 @@ def delete_solve():
 
 # create new session
 @app.route("/new_session", methods=["POST", "GET"])
+@login_required
 def create_session():
     # if it's a post request
     if request.method == "POST":
@@ -278,6 +332,8 @@ def create_session():
 
 # rename session
 @app.route("/rename_session", methods=["POST", "GET"])
+@login_required
+@session_owner_required
 def rename_session():
     # get the session form the session id parameter from the url
     session_id = request.args.get("session_id")
@@ -296,6 +352,7 @@ def rename_session():
 
 # switch session
 @app.route("/switch_session", methods=["POST", "GET"])
+@login_required
 def switch_session():
     # if it's a post request
     if request.method == "POST":
@@ -308,6 +365,8 @@ def switch_session():
 
 # delete session
 @app.route("/delete_session", methods=["POST", "GET"])
+@login_required
+@session_owner_required
 def delete_session():
     # get the wanted session form the session_id url parameter
     session_id = request.args.get("session_id")
