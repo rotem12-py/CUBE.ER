@@ -4,3 +4,10 @@
     text-align: center; /* Ensures the text is centered if needed */
     color: white; /* Adjust text color if necessary */
 }
+
+#session-control {
+    position: fixed; /* Fixed position relative to the viewport */
+    bottom: 20px;    /* Distance from the bottom of the screen */
+    right: 20px;     /* Distance from the right of the screen */
+    z-index: 9999;   /* Ensure it appears on top of other content */
+}

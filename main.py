@@ -32,6 +32,7 @@ class User(db.Model, UserMixin):
     password: Mapped[str] = mapped_column(String, nullable=False, unique=True)
 
     solves = relationship("NewSolve", back_populates="owner")
+    sessions = relationship("Session", back_populates="owner")
 
 
 class NewSolve(db.Model):
@@ -46,6 +47,21 @@ class NewSolve(db.Model):
 
     owner_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
     owner = relationship("User", back_populates="solves")
+
+    session_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("sessions.id"))
+    session_owned_by = relationship("Session", back_populates="solves")
+
+
+class Session(db.Model):
+    __tablename__ = "sessions"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    session_type: Mapped[str] = mapped_column(String, nullable=False)
+
+    owner_id = mapped_column(Integer, db.ForeignKey("users.id"))
+    owner = relationship("User", back_populates="sessions")
+
+    solves = relationship("NewSolve", back_populates="session_owned_by")
 
 
 
@@ -63,9 +79,12 @@ def home():
         flash("To use The Website You Need To register Or Log In.")
         return redirect(url_for("register"))
 
+    # get the current session using the session_id parameter from the url
+    session_id = request.args.get("session_id", current_user.sessions[0].id)
+    current_session = db.get_or_404(Session, session_id)
+
     # if they are logged in and the request methods is post(meaning they added a new solve) handle it and add to the db
     if request.method == "POST":
-
         # check if its from timer mode or input mode and behave accordingly
         if request.is_json:
             data = request.get_json()
@@ -73,18 +92,20 @@ def home():
             new_solve = NewSolve(
                 time = float(data["time"]),
                 owner = current_user,
-                solve_num = len(current_user.solves) + 1,
+                solve_num = len(current_session.solves) + 1,
                 scramble = data["scramble"],
-                date = str(date.today())
+                date = str(date.today()),
+                session_owned_by=current_session
             )
 
         else:
             new_solve = NewSolve(
                 time=float(request.form["time"]) ,
                 owner=current_user,
-                solve_num=len(current_user.solves) + 1,
+                solve_num=len(current_session.solves) + 1,
                 scramble=request.form["scramble"],
-                date=str(date.today())
+                date=str(date.today()),
+                session_owned_by = current_session
             )
         # add solves to db and commit
         db.session.add(new_solve)
@@ -95,7 +116,7 @@ def home():
     # if logged in but didn't post(meaning they are loading the page but didn't do anything yet) load the page and pass everything needed to it
     else:
         mode = request.args.get("mode", "input")
-        return render_template("index.html", scramble=scramble("3x3"), all_solves=list(reversed(current_user.solves)), mode=mode)
+        return render_template("index.html", scramble=scramble(current_session.session_type), all_solves=list(reversed(current_session.solves)), mode=mode, current_session=current_session)
 
 # register route
 @app.route("/register", methods=["POST", "GET"])
@@ -116,10 +137,21 @@ def register():
                 password = generate_password_hash(request.form["password"], method="scrypt", salt_length=8)
             )
 
+            # also create a new session for the user
+            new_session = Session(
+                name = "1",
+                session_type = "3x3",
+                owner = new_user
+            )
+
+            # add the user and the session to db and login the user
             db.session.add(new_user)
+            db.session.add(new_session)
             db.session.commit()
             login_user(new_user)
-            return redirect(url_for("home"))
+
+            # redirect to the home page with the new session after registering
+            return redirect(url_for("home", session_id=new_session.id))
         # if it's not a post request(meaning they load the page) load the page
     else:
         return render_template("register.html")
@@ -223,6 +255,74 @@ def delete_solve():
     db.session.commit()
     return redirect("/")
 
+# create new session
+@app.route("/new_session", methods=["POST", "GET"])
+def create_session():
+    # if it's a post request
+    if request.method == "POST":
+        # create the new session based on the form submitted
+        new_session = Session(
+            name = request.form["session_name"],
+            session_type = request.form["session_type"],
+            owner = current_user
+        )
+
+        # add it to the db and redirect to home with the new session id
+        db.session.add(new_session)
+        db.session.commit()
+
+        return redirect(url_for("home", session_id=new_session.id))
+    # if it's not a post, render the page
+    return render_template("create-session.html")
+
+
+# rename session
+@app.route("/rename_session", methods=["POST", "GET"])
+def rename_session():
+    # get the session form the session id parameter from the url
+    session_id = request.args.get("session_id")
+    current_session = db.get_or_404(Session, session_id)
+
+    # if it's a post request
+    if request.method == "POST":
+        # get the new sessions name from the form and update the db with it. return to home with the sessions id
+        current_session.name = request.form["new_session_name"]
+        db.session.commit()
+        return redirect(url_for("home", session_id=current_session.id))
+
+    # if not a post render the page
+    return render_template("rename-session.html", current_session=current_session)
+
+
+# switch session
+@app.route("/switch_session", methods=["POST", "GET"])
+def switch_session():
+    # if it's a post request
+    if request.method == "POST":
+        # get the session ids from the form and redirect to home with it
+        return redirect(url_for("home", session_id=request.form["session_to_switch"]))
+
+    # if not a post render the page
+    return render_template("switch-session.html")
+
+
+# delete session
+@app.route("/delete_session", methods=["POST", "GET"])
+def delete_session():
+    # get the wanted session form the session_id url parameter
+    session_id = request.args.get("session_id")
+    current_session = db.get_or_404(Session, session_id)
+
+    # if it's a post(meaning user pressed yes)
+    if request.method == "POST":
+        # delete every solve owned by this session and the session itself and commit. redirect to home
+        for solve in current_session.solves:
+            db.session.delete(solve)
+        db.session.delete(current_session)
+        db.session.commit()
+        return redirect(url_for("home"))
+# if not a post just render the page
+    return render_template("delete-session.html", session_id=session_id, current_session=current_session)
 
 if __name__ == "__main__":
     app.run(debug=True)
