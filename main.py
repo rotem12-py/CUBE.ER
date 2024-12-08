@@ -7,6 +7,7 @@ from sqlalchemy import Integer, String, Float
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from datetime import date
 from functools import wraps
+from avgs import get_best_solve, calc_small_ao, best_ao, calc_mo3
 
 
 # create the app and init necessary things for the app
@@ -118,6 +119,7 @@ def login_required(f):
 
     return decorated_function
 
+red_url = ""
 
 # home route
 @app.route("/", methods=["POST", "GET"])
@@ -161,7 +163,7 @@ def home():
     # if logged in but didn't post(meaning they are loading the page but didn't do anything yet) load the page and pass everything needed to it
     else:
         mode = request.args.get("mode", "input")
-        return render_template("index.html", scramble=scramble(current_session.session_type), all_solves=list(reversed(current_session.solves)), mode=mode, current_session=current_session)
+        return render_template("index.html", scramble=scramble(current_session.session_type), all_solves=list(reversed(current_session.solves)), mode=mode, current_session=current_session, best_solve=get_best_solve(current_session), ao5=calc_small_ao(current_session.solves[-5:], ao_length=5), ao12=calc_small_ao(current_session.solves[-12:], ao_length=12), best_ao5=best_ao(ao_length=5, solves=current_session.solves), best_ao12=best_ao(ao_length=12, solves=current_session.solves), mo3=calc_mo3(current_session.solves[-3:]), best_mo3=best_ao(solves=current_session.solves, ao_length=3))
 
 # register route
 @app.route("/register", methods=["POST", "GET"])
@@ -239,6 +241,8 @@ def logout():
 @login_required
 @solve_owner_required
 def edit_solve():
+    global red_url
+    red_url = request.referrer
     req_solve = db.get_or_404(NewSolve, request.args.get("solve_id"))
 
     return render_template("edit-solve.html", req_solve=req_solve)
@@ -264,7 +268,7 @@ def reset_solve():
     req_solve.status = "OK"
     db.session.commit()
 
-    return redirect("/")
+    return redirect(red_url)
 
 
 # add penalties to solves
@@ -283,7 +287,7 @@ def penalty():
         req_solve.status = "+2"
         req_solve.p2_count += 1
         db.session.commit()
-        return redirect('/')
+        return redirect(red_url)
     # if the penalty_type is dnf check if teh solves status is "+2" and if it is reset it. change the solves status to dnf and commit
     if penalty_type == "DNF":
         if req_solve.status == "+2":
@@ -294,7 +298,7 @@ def penalty():
             req_solve.time = round(req_solve.time, 2)
         req_solve.status = "DNF"
         db.session.commit()
-        return redirect("/")
+        return redirect(red_url)
 
 
 # get solve using the solve_id parameter and delete it
@@ -306,7 +310,7 @@ def delete_solve():
 
     db.session.delete(req_solve)
     db.session.commit()
-    return redirect("/")
+    return redirect(red_url)
 
 # create new session
 @app.route("/new_session", methods=["POST", "GET"])
