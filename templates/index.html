@@ -83,6 +83,12 @@
             {% if ao12 %}
             <h5 class="card-title">AO12: {{ ao12 }} Best: {{ best_ao12 }}</h5>
             {% endif %}
+            {% if ao100 %}
+            <h5 class="card-title">AO100: {{ ao100 }} Best: {{ best_ao100 }}</h5>
+            {% endif %}
+            {% if ao1000 %}
+            <h5 class="card-title">AO1000: {{ ao1000 }} Best: {{ best_ao1000 }}</h5>
+            {% endif %}
             {% for solve in all_solves %}
             {% if solve.status == "+2" %}
             <h5>{{ solve.solve_num }}. (+{{solve.p2_count * 2}}){{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>

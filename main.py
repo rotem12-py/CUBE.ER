@@ -7,7 +7,7 @@ from sqlalchemy import Integer, String, Float
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from datetime import date
 from functools import wraps
-from avgs import get_best_solve, calc_small_ao, best_ao, calc_mo3
+from avgs import get_best_solve, calc_small_ao, best_ao, calc_mo3, calc_big_ao
 
 
 # create the app and init necessary things for the app
@@ -167,7 +167,7 @@ def home():
     # if logged in but didn't post(meaning they are loading the page but didn't do anything yet) load the page and pass everything needed to it
     else:
         mode = request.args.get("mode", "input")
-        return render_template("index.html", scramble=scramble(current_session.session_type), all_solves=list(reversed(current_session.solves)), mode=mode, current_session=current_session, best_solve=get_best_solve(current_session), ao5=calc_small_ao(current_session.solves[-5:], ao_length=5), ao12=calc_small_ao(current_session.solves[-12:], ao_length=12), best_ao5=best_ao(ao_length=5, solves=current_session.solves), best_ao12=best_ao(ao_length=12, solves=current_session.solves), mo3=calc_mo3(current_session.solves[-3:]), best_mo3=best_ao(solves=current_session.solves, ao_length=3))
+        return render_template("index.html", scramble=scramble(current_session.session_type), all_solves=list(reversed(current_session.solves)), mode=mode, current_session=current_session, best_solve=get_best_solve(current_session), ao5=calc_small_ao(current_session.solves[-5:], ao_length=5), ao12=calc_small_ao(current_session.solves[-12:], ao_length=12), best_ao5=best_ao(ao_length=5, solves=current_session.solves), best_ao12=best_ao(ao_length=12, solves=current_session.solves), mo3=calc_mo3(current_session.solves[-3:]), best_mo3=best_ao(solves=current_session.solves, ao_length=3), ao100=calc_big_ao(solves=current_session.solves[-100:], ao_length=100), best_ao100=best_ao(solves=current_session.solves, ao_length=100), ao1000=calc_big_ao(solves=current_session.solves[-1000:], ao_length=1000), best_ao1000=best_ao(solves=current_session.solves, ao_length=1000))
 
 # register route
 @app.route("/register", methods=["POST", "GET"])

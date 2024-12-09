@@ -43,8 +43,36 @@ def calc_small_ao(solves, ao_length):
     return ao_result
 
 
+def calc_big_ao(solves, ao_length):
+    num = 0
+    ao_result = 0
+    ao_list = []
+    dnf_count = 0
 
+    solves_to_remove = int(ao_length * 0.05)
 
+    if len(solves) < ao_length:
+        return None
+
+    for solve in solves:
+        if solve.status == 'DNF':
+            ao_list.append(float('inf'))
+            dnf_count += 1
+        else:
+            ao_list.append(solve.time)
+
+    if dnf_count > solves_to_remove:
+        return "DNF"
+
+    for i in range(solves_to_remove):
+        ao_list.remove(min(ao_list))
+        ao_list.remove(max(ao_list))
+
+    for solve in ao_list:
+        num += solve
+
+    ao_result = round(num / len(ao_list), 2)
+    return ao_result
 
 def best_ao(solves, ao_length):
     all_ao = []  # This will store the valid AO results.
@@ -56,7 +84,7 @@ def best_ao(solves, ao_length):
         elif 3 < ao_length < 13:
             ao = calc_small_ao(ao_length=ao_length, solves=solves[i:i + ao_length])
         elif ao_length > 12:
-            pass
+            ao = calc_big_ao(ao_length=ao_length, solves=solves[i:i + ao_length])
 
         if ao != "DNF":
             all_ao.append(ao)
