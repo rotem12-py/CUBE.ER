@@ -146,14 +146,18 @@ def home():
             )
 
         else:
-            new_solve = NewSolve(
-                time=float(request.form["time"]) ,
-                owner=current_user,
-                solve_num=len(current_session.solves) + 1,
-                scramble=request.form["scramble"],
-                date=str(date.today()),
-                session_owned_by = current_session
-            )
+            try:
+                new_solve = NewSolve(
+                    time=float(request.form["time"]) ,
+                    owner=current_user,
+                    solve_num=len(current_session.solves) + 1,
+                    scramble=request.form["scramble"],
+                    date=str(date.today()),
+                    session_owned_by = current_session
+                )
+            except ValueError:
+                flash("Please Enter A Valid Time.")
+                return redirect(request.referrer)
         # add solves to db and commit
         db.session.add(new_solve)
         db.session.commit()
@@ -388,4 +392,4 @@ def delete_session():
     return render_template("delete-session.html", session_id=session_id, current_session=current_session)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

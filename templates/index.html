@@ -39,10 +39,20 @@
 </div>
 
 {% if mode == "input" %}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="flash-message">
+  {% for message in messages %}
+  <h1 style="color: red; font-size: 30px; margin-left: 390px;">{{ message }}</h1>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
 <div style="position: absolute; top: 40%; left: 27%;">
-    <form action="{{ url_for('home', session_id=current_session.id) }}" method="post" id="solve-form">
+    <form action="{{ url_for('home', session_id=current_session.id) }}" method="post" id="solve-form" autocomplete="off">>
         <div class="mb-3">
-            <input class="form-control" style="width: 800px; height: 110px; text-align: center; font-size: 24px;" name="time">
+            <input class="form-control" style="width: 800px; height: 110px; text-align: center; font-size: 24px;" name="time" autofocus>
         </div>
         <input type="hidden" name="scramble" value="{{ scramble }}" id="hidden-scramble">
     </form>
@@ -56,34 +66,36 @@
     {% endif %}
 </div>
 {% endif %}
-
-<div class="card" style="width: 18rem; height: 698px;" id="solves-card">
-  <div class="card-body">
-      <h5 class="card-title">{{ current_session.name }}</h5>
-    <h5 class="card-title">Your Solves:</h5>
-      {% if best_solve %}
-      <h5 class="card-title">Best Single: {{ best_solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + best_solve.id | string }}">Edit</a></h5>
-      {% endif %}
-      {% if mo3 %}
-      <h5 class="card-title">MO3: {{ mo3 }} Best: {{ best_mo3 }}</h5>
-      {% endif %}
-      {% if ao5 %}
-      <h5 class="card-title">AO5: {{ ao5 }} Best: {{ best_ao5 }}</h5>
-      {% endif %}
-      {% if ao12 %}
-      <h5 class="card-title">AO12: {{ ao12 }} Best: {{ best_ao12 }}</h5>
-      {% endif %}
-      {% for solve in all_solves %}
-      {% if solve.status == "+2" %}
-      <h5>{{ solve.solve_num }}. (+{{solve.p2_count * 2}}){{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
-      {% elif solve.status == "DNF" %}
-      <h5>{{ solve.solve_num }}. DNF({{ solve.time }})<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
-      {% else %}
-      <h5>{{ solve.solve_num }}. {{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
-      {% endif %}
-      {% endfor %}
-  </div>
+<div id="solves-card">
+    <div class="card full-height d-flex align-items-start" style="width: 18rem;">
+        <div class="card-body">
+            <h5 class="card-title">{{ current_session.name }}</h5>
+            <h5 class="card-title">Your Solves:</h5>
+            {% if best_solve %}
+            <h5 class="card-title">Best Single: {{ best_solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + best_solve.id | string }}">Edit</a></h5>
+            {% endif %}
+            {% if mo3 %}
+            <h5 class="card-title">MO3: {{ mo3 }} Best: {{ best_mo3 }}</h5>
+            {% endif %}
+            {% if ao5 %}
+            <h5 class="card-title">AO5: {{ ao5 }} Best: {{ best_ao5 }}</h5>
+            {% endif %}
+            {% if ao12 %}
+            <h5 class="card-title">AO12: {{ ao12 }} Best: {{ best_ao12 }}</h5>
+            {% endif %}
+            {% for solve in all_solves %}
+            {% if solve.status == "+2" %}
+            <h5>{{ solve.solve_num }}. (+{{solve.p2_count * 2}}){{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
+            {% elif solve.status == "DNF" %}
+            <h5>{{ solve.solve_num }}. DNF({{ solve.time }})<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
+            {% else %}
+            <h5>{{ solve.solve_num }}. {{ solve.time }}<a class="btn btn-lg btn-secondary" href="{{ '/edit_solve?solve_id=' + solve.id | string }}">Edit</a></h5>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
 </div>
+
 
 <div class="position-fixed bottom-0 end-0 p-3" id="session-control">
     <a class="btn btn-success btn-lg" style="width: 100px;" href="{{ url_for('create_session') }}">New Session</a>

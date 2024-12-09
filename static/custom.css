@@ -11,3 +11,17 @@
     right: 20px;     /* Distance from the right of the screen */
     z-index: 9999;   /* Ensure it appears on top of other content */
 }
+
+.full-height {
+        height: 88vh; /* Maintain card height relative to viewport */
+    }
+
+#solves-card {
+    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: calc(88vh - 2rem); /* Restrict height to maintain layout */
+}
+
+.card-body {
+    max-height: calc(88vh - 4rem); /* Adjust to fit card size */
+    overflow-y: auto; /* Allow scrolling within the card-body */
+}
