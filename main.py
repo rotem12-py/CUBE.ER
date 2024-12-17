@@ -66,7 +66,8 @@ class Session(db.Model):
     solves = relationship("NewSolve", back_populates="session_owned_by")
 
 
-
+with app.app_context():
+    db.create_all()
 # load login manager
 @login_manager.user_loader
 def load_user(user_id):
